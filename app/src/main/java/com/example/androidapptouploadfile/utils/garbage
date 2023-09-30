@@ -1,0 +1,35 @@
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(key1 = lifecycleOwner, effect = {
+        val eventObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> {
+
+                }
+
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(eventObserver)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(eventObserver)
+        }
+    })
+
+
+    // this below not worked //////////////////////
+    fun Context.getActivity(): AppCompatActivity? = when (this) {
+        is AppCompatActivity -> this
+        is ContextWrapper -> baseContext.getActivity()
+        else -> null
+    }
+
+    fun Uri.getRealPath(context: Context): String? {
+        val projection = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = context.contentResolver.query(this, projection, null, null, null)
+        val columnIndex = cursor?.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+        cursor?.moveToFirst()
+        val filePath = cursor?.getString(columnIndex!!)
+        cursor?.close()
+        return filePath
+    }
+    ////////////////////////////////////////////////
