@@ -101,7 +101,7 @@ fun MainScreen(
                     )
                 },
                 onDismiss = viewModel::dismissDialog,
-                onGoToAppSettingsClick = { openAppSettings(context = context) }
+                onGoToAppSettingsClick = { context.openAppSettings() }
             )
         }
 
@@ -112,8 +112,7 @@ fun MainScreen(
             val data: Intent? = result.data
             val fileUri = data?.data
             if (fileUri != null) {
-                sendCommandToUploadService(
-                    context = context,
+                context.sendCommandToUploadService(
                     data = fileUri,
                     action = UploadFileService.UploadFileServiceActions.START.toString()
                 )

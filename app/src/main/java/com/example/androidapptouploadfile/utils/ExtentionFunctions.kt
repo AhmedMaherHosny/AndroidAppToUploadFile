@@ -27,13 +27,47 @@ fun Context.findActivity(): Activity {
     throw IllegalStateException("Permissions should be called in the context of an Activity")
 }
 
-fun openAppSettings(context: Context) {
+fun Context.openAppSettings() {
     Intent(
         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-        Uri.fromParts("package", context.packageName, null)
+        Uri.fromParts("package", this.packageName, null)
     ).also {
         it.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        context.startActivity(it)
+        this.startActivity(it)
+    }
+}
+
+fun Long.formatTime(): String {
+    val minutes = this / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    val weeks = days / 7
+    val months = weeks / 4
+    val years = months / 12
+
+    return when {
+        years > 0 -> "$years years left"
+        months > 0 -> "$months months left"
+        weeks > 0 -> "$weeks weeks left"
+        days > 0 -> "$days days left"
+        hours > 0 -> "$hours hours left"
+        minutes > 0 -> "$minutes minutes left"
+        else -> "$this seconds left"
+    }
+}
+
+fun Long.formatSpeed(): String {
+    val bytesPerSecond = this.toDouble()
+
+    val kilobytesPerSecond = bytesPerSecond / 1024.0
+    val megabytesPerSecond = kilobytesPerSecond / 1024.0
+    val gigabytesPerSecond = megabytesPerSecond / 1024.0
+
+    return when {
+        gigabytesPerSecond >= 1.0 -> String.format("%.2f GB/s", gigabytesPerSecond)
+        megabytesPerSecond >= 1.0 -> String.format("%.2f MB/s", megabytesPerSecond)
+        kilobytesPerSecond >= 1.0 -> String.format("%.2f KB/s", kilobytesPerSecond)
+        else -> String.format("%.2f B/s", bytesPerSecond)
     }
 }
 
@@ -91,10 +125,10 @@ fun Uri.readBytes(context: Context): ByteArray? {
     return null
 }
 
-fun sendCommandToUploadService(context: Context, data: Uri, action: String) =
-    Intent(context, UploadFileService::class.java).also {
+fun Context.sendCommandToUploadService(data: Uri, action: String) =
+    Intent(this, UploadFileService::class.java).also {
         it.action = action
         it.data = data
-        context.startService(it)
+        this.startService(it)
     }
 
