@@ -8,6 +8,7 @@ import java.io.File
 interface UploadUseCase {
     suspend fun uploadFileToServer(
         contentRange: String,
+        fileIdentifier: String,
         file: MultipartBody.Part
     ): UploadFileDomainModel
 }

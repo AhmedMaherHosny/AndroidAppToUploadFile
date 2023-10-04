@@ -1,5 +1,6 @@
 package com.example.androidapptouploadfile.data.remote.api
 
+import android.adservices.common.AdTechIdentifier
 import com.example.androidapptouploadfile.data.remote.dtos.UploadFileDto
 import okhttp3.MultipartBody
 import retrofit2.http.Header
@@ -14,6 +15,7 @@ interface RetrofitApi {
     @POST("upload/file")
     suspend fun uploadFile(
         @Header("Content-Range") contentRange: String,
+        @Header("X-File-Identifier") fileIdentifier: String,
         @Part file: MultipartBody.Part
     ): UploadFileDto
 }

@@ -19,6 +19,7 @@ import com.example.androidapptouploadfile.utils.getFileName
 import com.example.androidapptouploadfile.utils.getFileSize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
@@ -53,7 +54,7 @@ class UploadFileService : LifecycleService() {
         startForeground(NOTIFICATION_ID, buildNotification(0, 0, -1))
         val contentLength = uri.getFileSize(contentResolver)
         val fileName = uri.getFileName(contentResolver)
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE * 1024)
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var currentPosition = 0
         var startByte: Long
         var endByte: Long
@@ -77,6 +78,7 @@ class UploadFileService : LifecycleService() {
                 )
                 val response = uploadUseCase.uploadFileToServer(
                     contentRange = contentRange,
+                    fileIdentifier = "a",
                     file = filePart
                 )
                 currentPosition += bytesRead

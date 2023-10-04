@@ -13,8 +13,9 @@ class RemoteServerRepositoryImpl @Inject constructor(
 ) : RemoteServerRepository {
     override suspend fun uploadFileToServer(
         contentRange: String,
+        fileIdentifier: String,
         file: MultipartBody.Part
     ): UploadFileDomainModel {
-        return retrofitApi.uploadFile(contentRange, file).toUploadFileDomainModel()
+        return retrofitApi.uploadFile(contentRange, fileIdentifier, file).toUploadFileDomainModel()
     }
 }
