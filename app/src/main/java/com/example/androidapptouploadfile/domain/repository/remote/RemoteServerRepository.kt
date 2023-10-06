@@ -1,4 +1,4 @@
-package com.example.androidapptouploadfile.domain.repository
+package com.example.androidapptouploadfile.domain.repository.remote
 
 import com.example.androidapptouploadfile.domain.models.UploadFileDomainModel
 import okhttp3.MultipartBody

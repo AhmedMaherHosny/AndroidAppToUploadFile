@@ -16,6 +16,7 @@ import android.provider.OpenableColumns
 import android.provider.Settings
 import com.example.androidapptouploadfile.presentation.services.UploadFileService
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 
 fun Context.findActivity(): Activity {
@@ -131,4 +132,8 @@ fun Context.sendCommandToUploadService(data: Uri, action: String) =
         it.data = data
         this.startService(it)
     }
+
+fun generateUUIDv4(): UUID {
+    return UUID.randomUUID()
+}
 
