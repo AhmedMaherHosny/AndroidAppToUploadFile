@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
@@ -28,7 +27,6 @@ import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 
 
@@ -68,14 +66,13 @@ class UploadFileService : LifecycleService() {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var uriDetails: UriDetailsUiModel?
         var currentPosition = 0L
-        var startByte: Long = 0
+        var startByte = 0L
         var endByte: Long
         var bytesRead: Int
         var contentRange: String
         var requestBody: RequestBody
         var filePart: MultipartBody.Part
         val startTime = System.currentTimeMillis()
-        val bytesUploaded = AtomicLong(0)
         lifecycleScope.launch {
             uriDetails =
                 localDatastoreUseCases.readUriModelDetailsForUploadUseCase(uri.toString())
@@ -93,7 +90,6 @@ class UploadFileService : LifecycleService() {
             } else {
                 startByte = uriDetails!!.startByte ?: 0
                 currentPosition = uriDetails!!.startByte ?: 0
-                progress.postValue(uriDetails!!.progress)
             }
             val inputStream = contentResolver.openInputStream(uri) ?: return@launch
             inputStream.skip(startByte)
@@ -114,16 +110,15 @@ class UploadFileService : LifecycleService() {
                     file = filePart
                 )
                 currentPosition += bytesRead
-                bytesUploaded.addAndGet(bytesRead.toLong())
                 val progressValue =
-                    ((bytesUploaded.get().toDouble() / contentLength.toDouble()) * 100).toInt()
+                    (((endByte + 1).toDouble() / contentLength.toDouble()) * 100).toInt()
                 progress.postValue(progressValue)
                 val currentTime = System.currentTimeMillis()
                 val elapsedTime = (currentTime - startTime) / 1000.0
                 if (elapsedTime > 0) {
-                    val currentSpeed = bytesUploaded.get() / elapsedTime
+                    val currentSpeed = (endByte + 1) / elapsedTime
                     uploadSpeed.postValue(currentSpeed)
-                    val remainingBytes = contentLength - bytesUploaded.get()
+                    val remainingBytes = contentLength - (endByte + 1)
                     val estimatedTimeSec =
                         if (currentSpeed > 0) (remainingBytes / currentSpeed).toLong() else -1
                     estimatedTimeRemaining.postValue(estimatedTimeSec)
@@ -131,7 +126,7 @@ class UploadFileService : LifecycleService() {
                 localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
                     uri.toString(), UriDetailsUiModel(
                         fileIdentifier = uriDetails!!.fileIdentifier,
-                        startByte = endByte+1,
+                        startByte = endByte + 1,
                         progress = progressValue
                     ).toUriDetailsDomainModel()
                 )
