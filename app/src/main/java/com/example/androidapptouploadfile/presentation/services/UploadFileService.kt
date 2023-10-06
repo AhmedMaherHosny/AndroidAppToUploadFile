@@ -67,7 +67,7 @@ class UploadFileService : LifecycleService() {
         val fileName = uri.getFileName(contentResolver)
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var uriDetails: UriDetailsUiModel?
-        var currentPosition = 0
+        var currentPosition = 0L
         var startByte: Long = 0
         var endByte: Long
         var bytesRead: Int
@@ -92,18 +92,15 @@ class UploadFileService : LifecycleService() {
                         ?.toUriDetailsUiModel()
             } else {
                 startByte = uriDetails!!.startByte ?: 0
+                currentPosition = uriDetails!!.startByte ?: 0
+                progress.postValue(uriDetails!!.progress)
             }
-            Log.e(
-                "modelbefore",
-                uriDetails
-                    .toString()
-            )
             val inputStream = contentResolver.openInputStream(uri) ?: return@launch
             inputStream.skip(startByte)
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                 if (isPaused || isCanceled) break
-                startByte = currentPosition.toLong()
-                endByte = (currentPosition + bytesRead - 1).toLong()
+                startByte = currentPosition
+                endByte = (currentPosition + bytesRead - 1)
                 contentRange = "bytes $startByte-$endByte/$contentLength"
                 requestBody = buffer.copyOfRange(0, bytesRead).toRequestBody()
                 filePart = MultipartBody.Part.createFormData(
@@ -118,7 +115,9 @@ class UploadFileService : LifecycleService() {
                 )
                 currentPosition += bytesRead
                 bytesUploaded.addAndGet(bytesRead.toLong())
-                progress.postValue(0)
+                val progressValue =
+                    ((bytesUploaded.get().toDouble() / contentLength.toDouble()) * 100).toInt()
+                progress.postValue(progressValue)
                 val currentTime = System.currentTimeMillis()
                 val elapsedTime = (currentTime - startTime) / 1000.0
                 if (elapsedTime > 0) {
@@ -132,14 +131,14 @@ class UploadFileService : LifecycleService() {
                 localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
                     uri.toString(), UriDetailsUiModel(
                         fileIdentifier = uriDetails!!.fileIdentifier,
-                        startByte = endByte,
-                        progress = 0
+                        startByte = endByte+1,
+                        progress = progressValue
                     ).toUriDetailsDomainModel()
                 )
                 startForeground(
                     NOTIFICATION_ID,
                     buildNotification(
-                        0,
+                        progress.value ?: 0,
                         uploadSpeed.value?.toLong() ?: 0,
                         estimatedTimeRemaining.value ?: -1,
                         isPaused
@@ -147,7 +146,7 @@ class UploadFileService : LifecycleService() {
                 )
             }
             inputStream.close()
-            if (isCanceled) {
+            if (!isPaused) {
                 cancelService()
             }
         }

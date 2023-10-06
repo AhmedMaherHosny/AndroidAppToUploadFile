@@ -22,4 +22,5 @@ class LocalDatastoreUseCasesImpl @Inject constructor(
     override suspend fun deleteUriDetailsAboutUploadUseCase(uri: String) {
         datastoreRepository.deleteUriDetailsAboutUpload(uri)
     }
+
 }
