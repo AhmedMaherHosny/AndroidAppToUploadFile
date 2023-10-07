@@ -33,7 +33,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".presentation.services.UploadFileService"/>
+        <service android:name=".presentation.ui.main.services.UploadFileService"/>
     </application>
 
 </manifest>

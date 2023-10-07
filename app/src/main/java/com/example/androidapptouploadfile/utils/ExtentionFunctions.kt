@@ -14,7 +14,7 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.provider.Settings
-import com.example.androidapptouploadfile.presentation.services.UploadFileService
+import com.example.androidapptouploadfile.presentation.ui.main.services.UploadFileService
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 

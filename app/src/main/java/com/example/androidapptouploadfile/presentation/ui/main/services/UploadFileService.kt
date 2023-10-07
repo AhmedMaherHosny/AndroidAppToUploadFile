@@ -1,4 +1,4 @@
-package com.example.androidapptouploadfile.presentation.services
+package com.example.androidapptouploadfile.presentation.ui.main.services
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -17,16 +17,23 @@ import com.example.androidapptouploadfile.presentation.models.UriDetailsUiModel
 import com.example.androidapptouploadfile.presentation.ui.MainActivity
 import com.example.androidapptouploadfile.utils.Constants.CHANNEL_ID
 import com.example.androidapptouploadfile.utils.Constants.NOTIFICATION_ID
+import com.example.androidapptouploadfile.utils.RetrofitErrorType
 import com.example.androidapptouploadfile.utils.formatSpeed
 import com.example.androidapptouploadfile.utils.formatTime
 import com.example.androidapptouploadfile.utils.generateUUIDv4
 import com.example.androidapptouploadfile.utils.getFileName
 import com.example.androidapptouploadfile.utils.getFileSize
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.IOException
 import javax.inject.Inject
 
 
@@ -43,10 +50,12 @@ class UploadFileService : LifecycleService() {
     private var isCanceled = false
     private var uriOfTheFile: Uri? = null
 
+
     companion object {
-        val progress = MutableLiveData<Int>()
-        val uploadSpeed = MutableLiveData<Double>()
-        val estimatedTimeRemaining = MutableLiveData<Long>()
+        val progress = MutableStateFlow(0)
+        val uploadSpeed = MutableStateFlow(0.0)
+        val estimatedTimeRemaining = MutableStateFlow(0L)
+        val eventError = MutableSharedFlow<RetrofitErrorType>()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -64,36 +73,26 @@ class UploadFileService : LifecycleService() {
         val contentLength = uri.getFileSize(contentResolver)
         val fileName = uri.getFileName(contentResolver)
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        var uriDetails: UriDetailsUiModel?
-        var currentPosition = 0L
-        var startByte = 0L
+        var uriDetails: UriDetailsUiModel
+        var currentPosition: Long
+        var startByte: Long
         var endByte: Long
         var bytesRead: Int
         var contentRange: String
         var requestBody: RequestBody
         var filePart: MultipartBody.Part
         val startTime = System.currentTimeMillis()
-        lifecycleScope.launch {
-            uriDetails =
-                localDatastoreUseCases.readUriModelDetailsForUploadUseCase(uri.toString())
-                    ?.toUriDetailsUiModel()
-            if (uriDetails == null) {
-                localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
-                    uri.toString(), UriDetailsUiModel(
-                        fileIdentifier = generateUUIDv4().toString(),
-                        startByte = 0,
-                    ).toUriDetailsDomainModel()
-                )
-                uriDetails =
-                    localDatastoreUseCases.readUriModelDetailsForUploadUseCase(uri.toString())
-                        ?.toUriDetailsUiModel()
-            } else {
-                startByte = uriDetails!!.startByte ?: 0
-                currentPosition = uriDetails!!.startByte ?: 0
-            }
+        lifecycleScope.launch(Dispatchers.IO + retrofitExceptionHandler) {
+            uriDetails = initializeUriDetails(uri)
+            startByte = uriDetails.startByte ?: 0
+            currentPosition = uriDetails.startByte ?: 0
             val inputStream = contentResolver.openInputStream(uri) ?: return@launch
-            inputStream.skip(startByte)
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+            withContext(Dispatchers.IO) {
+                inputStream.skip(startByte)
+            }
+            while (withContext(Dispatchers.IO) {
+                    inputStream.read(buffer)
+                }.also { bytesRead = it } != -1) {
                 if (isPaused || isCanceled) break
                 startByte = currentPosition
                 endByte = (currentPosition + bytesRead - 1)
@@ -104,47 +103,101 @@ class UploadFileService : LifecycleService() {
                     fileName,
                     requestBody
                 )
-                val response = uploadUseCases.uploadFileToServerUseCase(
+                uploadUseCases.uploadFileToServerUseCase(
                     contentRange = contentRange,
-                    fileIdentifier = uriDetails?.fileIdentifier!!,
+                    fileIdentifier = uriDetails.fileIdentifier!!,
                     file = filePart
                 )
                 currentPosition += bytesRead
-                val progressValue =
-                    (((endByte + 1).toDouble() / contentLength.toDouble()) * 100).toInt()
-                progress.postValue(progressValue)
-                val currentTime = System.currentTimeMillis()
-                val elapsedTime = (currentTime - startTime) / 1000.0
-                if (elapsedTime > 0) {
-                    val currentSpeed = (endByte + 1) / elapsedTime
-                    uploadSpeed.postValue(currentSpeed)
-                    val remainingBytes = contentLength - (endByte + 1)
-                    val estimatedTimeSec =
-                        if (currentSpeed > 0) (remainingBytes / currentSpeed).toLong() else -1
-                    estimatedTimeRemaining.postValue(estimatedTimeSec)
-                }
-                localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
-                    uri.toString(), UriDetailsUiModel(
-                        fileIdentifier = uriDetails!!.fileIdentifier,
-                        startByte = endByte + 1,
-                        progress = progressValue
-                    ).toUriDetailsDomainModel()
+                progress.value = calculateProgressValue(endByte, contentLength)
+                uploadSpeed.value = calculateUploadSpeed(endByte, startTime)
+                estimatedTimeRemaining.value = calculateEstimatedTimeRemaining(
+                    endByte,
+                    contentLength,
+                    uploadSpeed.value
+                )
+                updateUriDetailsModel(
+                    uri,
+                    uriDetails.fileIdentifier!!,
+                    endByte,
+                    progress.value
                 )
                 startForeground(
                     NOTIFICATION_ID,
                     buildNotification(
-                        progress.value ?: 0,
-                        uploadSpeed.value?.toLong() ?: 0,
-                        estimatedTimeRemaining.value ?: -1,
+                        progress.value,
+                        uploadSpeed.value.toLong(),
+                        estimatedTimeRemaining.value,
                         isPaused
                     )
                 )
             }
-            inputStream.close()
+            withContext(Dispatchers.IO) {
+                inputStream.close()
+            }
             if (!isPaused) {
                 cancelService()
             }
         }
+    }
+
+    private suspend fun initializeUriDetails(uri: Uri): UriDetailsUiModel {
+        var uriDetails = localDatastoreUseCases.readUriModelDetailsForUploadUseCase(uri.toString())
+            ?.toUriDetailsUiModel()
+        if (uriDetails == null) {
+            localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
+                uri.toString(), UriDetailsUiModel(
+                    fileIdentifier = generateUUIDv4().toString(),
+                    startByte = 0,
+                ).toUriDetailsDomainModel()
+            )
+            uriDetails = localDatastoreUseCases.readUriModelDetailsForUploadUseCase(uri.toString())
+                ?.toUriDetailsUiModel()
+        } else {
+            uriDetails.startByte = uriDetails.startByte ?: 0
+        }
+        return uriDetails!!
+    }
+
+    private fun calculateProgressValue(endByte: Long, contentLength: Long) =
+        (((endByte + 1).toDouble() / contentLength.toDouble()) * 100).toInt()
+
+    private fun calculateEstimatedTimeRemaining(
+        endByte: Long,
+        contentLength: Long,
+        currentSpeed: Double
+    ): Long {
+        val remainingBytes = contentLength - (endByte + 1)
+        return if (currentSpeed > 0) {
+            (remainingBytes / currentSpeed).toLong()
+        } else {
+            -1
+        }
+    }
+
+    private fun calculateUploadSpeed(endByte: Long, startTime: Long): Double {
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = (currentTime - startTime) / 1000.0
+        return if (elapsedTime > 0) {
+            (endByte + 1) / elapsedTime
+        } else {
+            0.0
+        }
+    }
+
+    private suspend fun updateUriDetailsModel(
+        uri: Uri,
+        fileIdentifier: String,
+        endByte: Long,
+        progress: Int
+    ) {
+        localDatastoreUseCases.writeUriModelDetailsForUploadUseCase(
+            uri.toString(), UriDetailsUiModel(
+                fileIdentifier = fileIdentifier,
+                startByte = endByte + 1,
+                progress = progress
+            ).toUriDetailsDomainModel()
+        )
     }
 
     private fun pauseService() {
@@ -152,7 +205,7 @@ class UploadFileService : LifecycleService() {
         startForeground(
             NOTIFICATION_ID + 1,
             buildNotification(
-                progress.value ?: 0,
+                progress.value,
                 0,
                 -1,
                 isPaused
@@ -214,5 +267,17 @@ class UploadFileService : LifecycleService() {
 
     enum class UploadFileServiceActions {
         START, PAUSE_RESUME, CANCEL
+    }
+
+    private val retrofitExceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        if (throwable is IOException) {
+            setEventError(RetrofitErrorType.NETWORK_ERROR)
+        }
+    }
+
+    private fun setEventError(event: RetrofitErrorType) {
+        lifecycleScope.launch {
+            eventError.emit(event)
+        }
     }
 }

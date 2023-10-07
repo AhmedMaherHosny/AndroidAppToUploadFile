@@ -1,4 +1,4 @@
-package com.example.androidapptouploadfile.presentation.viewmodels.main.states
+package com.example.androidapptouploadfile.presentation.ui.main.viewmodel.states
 
 data class MainScreenState(
     val uploadStatus: UploadStatus = UploadStatus.CANCELED,

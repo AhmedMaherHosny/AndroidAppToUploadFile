@@ -1,11 +1,13 @@
-package com.example.androidapptouploadfile.presentation.viewmodels.main
+package com.example.androidapptouploadfile.presentation.ui.main.viewmodel
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
-import com.example.androidapptouploadfile.presentation.viewmodels.main.states.MainScreenState
+import androidx.lifecycle.viewModelScope
+import com.example.androidapptouploadfile.presentation.ui.main.viewmodel.states.MainScreenState
+import kotlinx.coroutines.launch
 
 class MainViewModel  : ViewModel() {
     var mainScreenState by mutableStateOf(MainScreenState())
