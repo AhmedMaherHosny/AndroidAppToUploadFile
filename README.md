@@ -26,7 +26,7 @@ This Android application is designed to upload very large files by splitting the
 - Dagger Hilt is used for dependency injection, making it easier to manage and provide dependencies throughout the application.
 
 ## Demo Video
-- Watch the [demo video](https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/raw/master/assets/video.mp4) to see the app in action, showcasing its file upload and progress tracking features.
+- Watch the ![demo video](https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/raw/master/assets/video.mp4) to see the app in action, showcasing its file upload and progress tracking features.
 
 ## Getting Started
 1. Clone the repository to your local machine.
