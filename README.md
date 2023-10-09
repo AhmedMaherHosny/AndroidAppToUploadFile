@@ -1,10 +1,10 @@
 # Android File Upload App with Jetpack Compose
 
-This Android application is designed to upload very large files by splitting them into chunks, using streams for efficient upload. It utilizes modern Android development technologies like Android Jetpack Compose, Uncle Bob's Clean Architecture, Coroutines, Retrofit 2, Dagger Hilt, and MVVM architecture. The app also includes a foreground service to handle file uploads and provides real-time progress updates.
+This Android application is designed to upload very large files by splitting them into chunks, using streams for efficient upload. 
 
 https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/assets/55118681/dfa8bea3-2737-4206-ab6e-2df3d9ae9a10
 
-## Features and Tools
+## Design Patterns and Tools
 
 ### 1. Android Jetpack Compose
 - The user interface of the application is built using Jetpack Compose, which allows for a more declarative and efficient way to create UI components.
@@ -26,6 +26,13 @@ https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/assets/55118681/dfa8be
 
 ### 7. Dagger Hilt
 - Dagger Hilt is used for dependency injection, making it easier to manage and provide dependencies throughout the application.
+
+## Features 
+### 1. Real Time Notification
+### 2. Upload Speed
+### 3. Estimated Time Reamining 
+### 4. Upload Progress
+### 5. Pause And Resume The Upload
 
 ## Getting Started
 1. Clone the repository to your local machine.
