@@ -2,7 +2,7 @@
 
 This Android application is designed to upload very large files by splitting them into chunks, using streams for efficient upload. It utilizes modern Android development technologies like Android Jetpack Compose, Uncle Bob's Clean Architecture, Coroutines, Retrofit 2, Dagger Hilt, and MVVM architecture. The app also includes a foreground service to handle file uploads and provides real-time progress updates.
 
-![Demo Video](https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/raw/master/assets/video.mp4)
+https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/assets/55118681/dfa8bea3-2737-4206-ab6e-2df3d9ae9a10
 
 ## Features and Tools
 
