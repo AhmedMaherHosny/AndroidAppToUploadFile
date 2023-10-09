@@ -28,11 +28,11 @@ https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/assets/55118681/dfa8be
 - Dagger Hilt is used for dependency injection, making it easier to manage and provide dependencies throughout the application.
 
 ## Features 
-### 1. Real Time Notification
-### 2. Upload Speed
-### 3. Estimated Time Reamining 
-### 4. Upload Progress
-### 5. Pause And Resume The Upload
+1. Real Time Notification
+2. Upload Speed
+3. Estimated Time Reamining 
+4. Upload Progress
+5. Pause And Resume The Upload
 
 ## Getting Started
 1. Clone the repository to your local machine.
