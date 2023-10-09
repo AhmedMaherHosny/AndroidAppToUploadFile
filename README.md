@@ -46,15 +46,8 @@ https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/assets/55118681/dfa8be
 4. Monitor the progress, upload speed, and estimated time remaining in real-time on the UI.
 5. The foreground service ensures that the upload continues even if you navigate away from the app.
 
-## Contributing
-Contributions to this project are welcome. Please feel free to fork the repository and submit pull requests to improve or extend the application.
-
 ## License
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/AhmedMaherHosny/AndroidAppToUploadFile/blob/master/LICENSE) file for details.
-
-## Acknowledgments
-- Thanks to Uncle Bob for Clean Architecture guidelines.
-- The project utilizes various open-source libraries and tools, which are credited in the codebase.
 
 ---
 
